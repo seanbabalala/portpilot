@@ -11,23 +11,23 @@ PortPilot is built with **SwiftUI + MenuBarExtra** for macOS 15+, with zero thir
 - Menu bar summary: `: N`
 - Real-time scan (default every 2s) using:
   - `lsof -nP -iTCP -sTCP:LISTEN`
+- Unified light **Bento Grid** window with integrated controls and settings
+- Smooth trend chart (spline curve) for global occupied ports
 - Port list with process info:
-  - Port / Friendly name / Process / PID / User
-- Beginner-friendly interpretation:
+  - Port / Process / PID / User / usage hint
+- Friendly interpretation:
   - e.g. SSH tunnel, local dev service, database hints
 - Search by:
   - port / process / PID / friendly label / usage hint
 - Sort and focus:
   - sort by port / process / recent activity
-  - optional "NEW only" focus mode
 - "New" badge for newly discovered listeners (5 seconds)
 - Context menu actions:
   - Copy URL / Copy PID / Copy kill command
-- Hover quick actions for copy / terminate (when enabled)
 - Optional command-line detail display (for disambiguating multiple `ssh` processes)
 - Optional kill action with safety controls:
   - disabled by default
-  - explicit settings enable
+  - explicit inline settings enable
   - confirmation required before each kill
   - async termination pipeline (`SIGTERM` → fallback `SIGKILL`) with immediate UI refresh
 
@@ -69,6 +69,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
 ## Settings
 
+- Integrated in the main panel (no separate settings scene)
 - Refresh interval: `1 / 2 / 5 / 10` seconds
 - Count mode:
   - **Mode A**: `(protocol, port, pid)`
@@ -84,7 +85,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 2. `LsofParser` loosely parses output and extracts listening port data.
 3. `PortsScanner` periodically refreshes and updates scanner state.
 4. `PortsStore` handles dedupe, sorting, and “new item” lifecycle.
-5. SwiftUI menu UI renders results with a compact Sonoma-style glass layout.
+5. SwiftUI menu UI renders results with a modern, border-light Bento layout.
 
 ---
 
@@ -105,7 +106,7 @@ PortPilot/
     SettingsStore.swift
   UI/
     PortsView.swift
-    SettingsView.swift
+    SettingsView.swift (legacy / currently not mounted)
   Resources/
     Info.plist
 ```
