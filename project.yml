@@ -1,0 +1,26 @@
+name: PortPilot
+options:
+  minimumXcodeGenVersion: 2.38.0
+  deploymentTarget:
+    macOS: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: 5.0
+    MARKETING_VERSION: 1.0.0
+    CURRENT_PROJECT_VERSION: 1
+    PRODUCT_BUNDLE_IDENTIFIER: com.portpilot.PortPilot
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+targets:
+  PortPilot:
+    type: application
+    platform: macOS
+    sources:
+      - path: PortPilot
+    settings:
+      base:
+        INFOPLIST_FILE: PortPilot/Resources/Info.plist
+        PRODUCT_NAME: PortPilot
+    scheme:
+      gatherCoverageData: false
+      testTargets: []
