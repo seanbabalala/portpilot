@@ -5,7 +5,8 @@ import Foundation
 final class PortsScanner: ObservableObject {
     @Published private(set) var consecutiveFailureCount: Int = 0
     @Published private(set) var isUnknown: Bool = false
-    @Published private(set) var summaryText: String = ": 0"
+    @Published private(set) var isScanning: Bool = false
+    @Published private(set) var lastSuccessfulScanAt: Date?
 
     private(set) var refreshInterval: TimeInterval
 
@@ -22,10 +23,8 @@ final class PortsScanner: ObservableObject {
         self.store = store
         self.refreshInterval = refreshInterval
 
-        bindStore()
         bindSettings(settingsStore)
         shouldResolveCommandLine = settingsStore?.showCommandLine ?? false
-        updateSummaryCountIfNeeded(count: store.listeners.count)
     }
 
     deinit {
@@ -56,14 +55,8 @@ final class PortsScanner: ObservableObject {
         scanLoopTask = nil
     }
 
-    private func bindStore() {
-        store.$listeners
-            .sink { [weak self] listeners in
-                guard let self else { return }
-                guard !self.isUnknown else { return }
-                self.updateSummaryCountIfNeeded(count: listeners.count)
-            }
-            .store(in: &cancellables)
+    func rescanNow() async {
+        await scanOnce()
     }
 
     private func bindSettings(_ settingsStore: SettingsStore?) {
@@ -72,14 +65,18 @@ final class PortsScanner: ObservableObject {
         settingsStore.$refreshInterval
             .removeDuplicates()
             .sink { [weak self] nextOption in
-                self?.setRefreshInterval(TimeInterval(nextOption.seconds))
+                DispatchQueue.main.async { [weak self] in
+                    self?.setRefreshInterval(TimeInterval(nextOption.seconds))
+                }
             }
             .store(in: &cancellables)
 
         settingsStore.$showCommandLine
             .removeDuplicates()
             .sink { [weak self] nextValue in
-                self?.shouldResolveCommandLine = nextValue
+                DispatchQueue.main.async { [weak self] in
+                    self?.shouldResolveCommandLine = nextValue
+                }
             }
             .store(in: &cancellables)
     }
@@ -97,33 +94,24 @@ final class PortsScanner: ObservableObject {
     }
 
     private func scanOnce() async {
+        guard !isScanning else { return }
+        isScanning = true
+        defer { isScanning = false }
+
         do {
             let listeners = try await performBackgroundScan(
                 includeCommandLine: shouldResolveCommandLine
             )
             consecutiveFailureCount = 0
             isUnknown = false
+            lastSuccessfulScanAt = Date()
             store.applyScan(listeners)
-            updateSummaryCountIfNeeded(count: store.listeners.count)
         } catch {
             consecutiveFailureCount += 1
             if consecutiveFailureCount >= 3 {
                 isUnknown = true
-                updateSummaryUnknownIfNeeded()
             }
         }
-    }
-
-    private func updateSummaryCountIfNeeded(count: Int) {
-        let nextValue = ": \(count)"
-        guard summaryText != nextValue else { return }
-        summaryText = nextValue
-    }
-
-    private func updateSummaryUnknownIfNeeded() {
-        let unknownValue = ": —"
-        guard summaryText != unknownValue else { return }
-        summaryText = unknownValue
     }
 
     private nonisolated func performBackgroundScan(includeCommandLine: Bool) async throws -> [PortListener] {

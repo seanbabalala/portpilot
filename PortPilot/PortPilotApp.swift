@@ -25,14 +25,14 @@ struct PortPilotApp: App {
         _portsScanner = StateObject(wrappedValue: scanner)
     }
 
+    private var menuBarTitle: String {
+        portsScanner.isUnknown ? ": —" : ": \(portsStore.listeners.count)"
+    }
+
     var body: some Scene {
-        MenuBarExtra(portsScanner.summaryText, systemImage: "dot.radiowaves.left.and.right") {
+        MenuBarExtra(menuBarTitle, systemImage: "dot.radiowaves.left.and.right") {
             PortsView(store: portsStore, settings: settingsStore, scanner: portsScanner)
         }
         .menuBarExtraStyle(.window)
-
-        Settings {
-            SettingsView(settings: settingsStore)
-        }
     }
 }

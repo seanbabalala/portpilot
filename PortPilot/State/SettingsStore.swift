@@ -12,7 +12,7 @@ enum RefreshIntervalOption: Int, CaseIterable, Identifiable, Sendable {
     var seconds: Int { rawValue }
 
     var label: String {
-        "\(rawValue) seconds"
+        "\(rawValue) 秒"
     }
 }
 
@@ -25,9 +25,9 @@ enum PortCountMode: String, CaseIterable, Identifiable, Sendable {
     var label: String {
         switch self {
         case .portAndPID:
-            return "A (port + pid)"
+            return "按实例（端口 + PID）"
         case .portOnly:
-            return "B (port only)"
+            return "按端口（聚合同端口进程）"
         }
     }
 }

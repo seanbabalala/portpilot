@@ -17,14 +17,19 @@ PortPilot is built with **SwiftUI + MenuBarExtra** for macOS 15+, with zero thir
   - e.g. SSH tunnel, local dev service, database hints
 - Search by:
   - port / process / PID / friendly label / usage hint
+- Sort and focus:
+  - sort by port / process / recent activity
+  - optional "NEW only" focus mode
 - "New" badge for newly discovered listeners (5 seconds)
 - Context menu actions:
   - Copy URL / Copy PID / Copy kill command
+- Hover quick actions for copy / terminate (when enabled)
 - Optional command-line detail display (for disambiguating multiple `ssh` processes)
 - Optional kill action with safety controls:
   - disabled by default
   - explicit settings enable
   - confirmation required before each kill
+  - async termination pipeline (`SIGTERM` → fallback `SIGKILL`) with immediate UI refresh
 
 ---
 

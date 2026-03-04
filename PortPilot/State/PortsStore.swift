@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 @MainActor
@@ -24,7 +23,6 @@ final class PortsStore: ObservableObject {
     private var countMode: PortCountMode
     private var stateByKey: [ListenerInstanceKey: ListenerState] = [:]
     private var expirationTasks: [ListenerInstanceKey: Task<Void, Never>] = [:]
-    private var cancellables: Set<AnyCancellable> = []
 
     init(
         newBadgeDuration: TimeInterval = 5,
@@ -35,12 +33,7 @@ final class PortsStore: ObservableObject {
         self.countMode = countMode
 
         if let settingsStore {
-            settingsStore.$countMode
-                .removeDuplicates()
-                .sink { [weak self] nextMode in
-                    self?.updateCountMode(nextMode)
-                }
-                .store(in: &cancellables)
+            self.countMode = settingsStore.countMode
         }
     }
 
@@ -81,6 +74,24 @@ final class PortsStore: ObservableObject {
         cancelTasksForRemovedKeys(nextKeys: Set(nextStateByKey.keys))
 
         stateByKey = nextStateByKey
+        publishSortedListeners()
+    }
+
+    func removeListeners(pid: Int) {
+        guard pid > 0 else { return }
+
+        let removedKeys = stateByKey.keys.filter { key in
+            key.pid == pid
+        }
+
+        guard !removedKeys.isEmpty else { return }
+
+        for key in removedKeys {
+            expirationTasks[key]?.cancel()
+            expirationTasks.removeValue(forKey: key)
+            stateByKey.removeValue(forKey: key)
+        }
+
         publishSortedListeners()
     }
 
