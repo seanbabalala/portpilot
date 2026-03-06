@@ -16,6 +16,7 @@ PortPilot is a macOS 15+ menu bar port monitor built with **SwiftUI + MenuBarExt
 ## 中文
 
 ### 功能亮点
+- 核心亮点：将正在运行的进程一键“保存为启动命令”，后续可在菜单栏快速启动/停止/重启
 - 菜单栏摘要：`: N`（支持失败阈值后 `: —`）
 - 实时扫描：`lsof -nP -iTCP -sTCP:LISTEN`
 - 端口列表：Port / Process / PID / User / 友好用途说明
@@ -33,6 +34,7 @@ PortPilot is a macOS 15+ menu bar port monitor built with **SwiftUI + MenuBarExt
 ### 我们实现了什么 / 解决了什么
 - 为“同时开发多个后端项目”的日常场景，提供菜单栏内的一站式可视化管理
 - 不再依赖多个终端窗口记命令：启动、停止、重启、改端口都可在 GUI 完成
+- 支持把临时运行命令沉淀为可复用配置：从“这次能跑”变成“下次一键跑”
 - 把冷冰冰的端口信息转成可读语义：用途说明、别名、来源、父进程链
 - 降低端口冲突排障成本：冲突识别、可用端口建议、健康检查与诊断导出
 - 安全默认优先：命令行默认隐藏、Kill 默认关闭且二次确认
@@ -74,6 +76,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ## English
 
 ### Highlights
+- Core differentiator: one-click “Save as startup command” from live processes, then quick start/stop/restart from menu
 - Menu bar summary: `: N` (falls back to `: —` after failure threshold)
 - Real-time scan via `lsof -nP -iTCP -sTCP:LISTEN`
 - Port list: Port / Process / PID / User / friendly usage hints
@@ -91,6 +94,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ### What We Built / What It Solves
 - A menu-bar-first control center for developers running many local backend services at once
 - Removes terminal command memorization for daily ops (start/stop/restart/rebind port) in one GUI
+- Converts ad-hoc local commands into reusable startup profiles, so “it works once” becomes “it starts anytime”
 - Turns raw process/port data into readable context (purpose labels, aliases, source, parent chain)
 - Speeds up conflict troubleshooting with conflict detection, suggested free ports, health checks, and diagnostics export
 - Keeps security as default behavior (command line hidden by default, kill disabled by default, confirmation required)
