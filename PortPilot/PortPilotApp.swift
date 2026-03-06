@@ -36,7 +36,7 @@ struct PortPilotApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra(menuBarTitle, systemImage: "dot.radiowaves.left.and.right") {
+        MenuBarExtra {
             PortsView(
                 store: portsStore,
                 settings: settingsStore,
@@ -44,7 +44,37 @@ struct PortPilotApp: App {
                 commands: commandProfilesStore,
                 knowledge: knowledgeStore
             )
+        } label: {
+            HStack(spacing: 5) {
+                MenuBarDualArcGlyph()
+                    .frame(width: 14, height: 14)
+                Text(menuBarTitle)
+            }
         }
         .menuBarExtraStyle(.window)
+    }
+}
+
+private struct MenuBarDualArcGlyph: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .trim(from: 0.08, to: 0.90)
+                .stroke(
+                    .primary.opacity(0.86),
+                    style: StrokeStyle(lineWidth: 1.55, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-30))
+
+            Circle()
+                .inset(by: 3)
+                .trim(from: 0.22, to: 0.96)
+                .stroke(
+                    .primary.opacity(0.62),
+                    style: StrokeStyle(lineWidth: 1.45, lineCap: .round)
+                )
+                .rotationEffect(.degrees(26))
+        }
+        .drawingGroup(opaque: false)
     }
 }

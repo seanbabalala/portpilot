@@ -91,6 +91,12 @@ struct PortsView: View {
         }
     }
 
+    private enum SettingsBentoCard: Hashable {
+        case scanHealth
+        case safetyNotifications
+        case displayRules
+    }
+
     private struct FocusHeaderButtonStyle: ButtonStyle {
         func makeBody(configuration: Configuration) -> some View {
             configuration.label
@@ -166,6 +172,7 @@ struct PortsView: View {
     @State private var selectedWorkspaceID: String = Self.allWorkspaceToken
     @State private var settingsFocusedExpandedPanel: SettingsFocusPanel?
     @State private var hoveredSettingsPanel: SettingsFocusPanel?
+    @State private var expandedSettingsCards: Set<SettingsBentoCard> = [.scanHealth]
 
     private func tr(_ chinese: String, _ english: String) -> String {
         settings.tr(chinese, english)
@@ -543,6 +550,9 @@ struct PortsView: View {
         .onChange(of: isSettingsExpanded) {
             if isSettingsExpanded {
                 settingsFocusedExpandedPanel = nil
+                if expandedSettingsCards.isEmpty {
+                    expandedSettingsCards = [.scanHealth]
+                }
             }
             hoveredSettingsPanel = nil
         }
@@ -1405,6 +1415,7 @@ struct PortsView: View {
     private var settingsBentoSection: some View {
         VStack(spacing: 10) {
             settingSectionCard(
+                id: .scanHealth,
                 title: tr("扫描与健康检查", "Scan & Health Check"),
                 subtitle: tr("Port 变更后自动验证是否生效", "Auto-verify after port changes"),
                 symbol: "waveform.path.ecg",
@@ -1471,6 +1482,7 @@ struct PortsView: View {
             }
 
             settingSectionCard(
+                id: .safetyNotifications,
                 title: tr("安全与通知", "Safety & Notifications"),
                 subtitle: tr("高风险操作和系统提醒", "Risky actions and system alerts"),
                 symbol: "shield.lefthalf.filled.badge.checkmark",
@@ -1511,6 +1523,7 @@ struct PortsView: View {
             }
 
             settingSectionCard(
+                id: .displayRules,
                 title: tr("显示与规则", "Display & Rules"),
                 subtitle: tr("提升可读性与自动化体验", "Improve readability and automation"),
                 symbol: "slider.horizontal.3",
@@ -1566,50 +1579,85 @@ struct PortsView: View {
     }
 
     private func settingSectionCard<Content: View>(
+        id: SettingsBentoCard,
         title: String,
         subtitle: String,
         symbol: String,
         tone: BentoTone,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        bentoCard(tone) {
-            HStack(alignment: .center, spacing: 10) {
-                Image(systemName: symbol)
-                    .font(.system(size: 11.2, weight: .semibold))
-                    .foregroundStyle(Color.blue.opacity(0.84))
-                    .frame(width: 24, height: 24)
-                    .background(Color.white.opacity(0.62), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.white.opacity(0.65), lineWidth: 0.6)
+        let isExpanded = expandedSettingsCards.contains(id)
+
+        return bentoCard(tone) {
+            Button {
+                withAnimation(sectionExpandAnimation) {
+                    if isExpanded {
+                        expandedSettingsCards.remove(id)
+                    } else {
+                        expandedSettingsCards.insert(id)
+                    }
+                }
+            } label: {
+                HStack(alignment: .center, spacing: 10) {
+                    Image(systemName: symbol)
+                        .font(.system(size: 11.2, weight: .semibold))
+                        .foregroundStyle(Color.blue.opacity(0.84))
+                        .frame(width: 24, height: 24)
+                        .background(Color.white.opacity(0.62), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .stroke(Color.white.opacity(0.65), lineWidth: 0.6)
+                        }
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(title)
+                            .font(.system(size: 10.1, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.black.opacity(0.78))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.84)
+
+                        Text(subtitle)
+                            .font(.system(size: 7.8, weight: .medium))
+                            .foregroundStyle(Color.black.opacity(0.46))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.84)
                     }
 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
-                        .font(.system(size: 10.1, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.black.opacity(0.78))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.84)
+                    Spacer(minLength: 8)
 
-                    Text(subtitle)
-                        .font(.system(size: 7.8, weight: .medium))
-                        .foregroundStyle(Color.black.opacity(0.46))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.84)
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 8.6, weight: .bold))
+                        .foregroundStyle(Color.black.opacity(0.52))
+                        .frame(width: 20, height: 20)
+                        .background(Color.white.opacity(0.56), in: Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(Color.white.opacity(0.64), lineWidth: 0.6)
+                        }
                 }
+                .padding(.horizontal, 9)
+                .padding(.vertical, 8)
+                .background(Color.white.opacity(0.28), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .stroke(Color.white.opacity(0.6), lineWidth: 0.55)
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
             }
-            .padding(.horizontal, 9)
-            .padding(.vertical, 8)
-            .background(Color.white.opacity(0.28), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .stroke(Color.white.opacity(0.6), lineWidth: 0.55)
-            }
+            .buttonStyle(.plain)
 
-            VStack(spacing: 8) {
-                content()
+            if isExpanded {
+                VStack(spacing: 8) {
+                    content()
+                }
+                .padding(.top, 8)
+                .transition(
+                    .asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .top)),
+                        removal: .opacity
+                    )
+                )
             }
-            .padding(.top, 8)
         }
     }
 

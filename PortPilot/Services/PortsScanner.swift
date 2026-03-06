@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import UniformTypeIdentifiers
 import UserNotifications
 
 @MainActor
@@ -513,6 +514,9 @@ private final class PortNotifications {
         content.title = title
         content.body = body
         content.sound = .default
+        if let iconAttachment = makeAppIconAttachment() {
+            content.attachments = [iconAttachment]
+        }
 
         let request = UNNotificationRequest(
             identifier: "portpilot.\(identifier)",
@@ -520,5 +524,54 @@ private final class PortNotifications {
             trigger: nil
         )
         center.add(request)
+    }
+
+    private func makeAppIconAttachment() -> UNNotificationAttachment? {
+        guard let iconURL = bundledAppIconURL() else { return nil }
+
+        let typeHint: String?
+        switch iconURL.pathExtension.lowercased() {
+        case "png":
+            typeHint = UTType.png.identifier
+        case "icns":
+            typeHint = UTType.icns.identifier
+        default:
+            typeHint = nil
+        }
+
+        let options: [AnyHashable: Any]? = typeHint.map {
+            [UNNotificationAttachmentOptionsTypeHintKey: $0]
+        }
+
+        return try? UNNotificationAttachment(
+            identifier: "portpilot.appicon",
+            url: iconURL,
+            options: options
+        )
+    }
+
+    private func bundledAppIconURL() -> URL? {
+        if let iconName = Bundle.main.object(
+            forInfoDictionaryKey: "CFBundleIconFile"
+        ) as? String, !iconName.isEmpty {
+            if let exactURL = Bundle.main.url(forResource: iconName, withExtension: nil) {
+                return exactURL
+            }
+
+            let iconURL = URL(fileURLWithPath: iconName)
+            let baseName = iconURL.deletingPathExtension().lastPathComponent
+            let ext = iconURL.pathExtension
+
+            if !ext.isEmpty,
+               let explicitURL = Bundle.main.url(forResource: baseName, withExtension: ext) {
+                return explicitURL
+            }
+
+            if let inferredICNSURL = Bundle.main.url(forResource: iconName, withExtension: "icns") {
+                return inferredICNSURL
+            }
+        }
+
+        return Bundle.main.url(forResource: "AppIcon", withExtension: "icns")
     }
 }
