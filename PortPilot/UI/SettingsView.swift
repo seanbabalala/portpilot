@@ -35,7 +35,7 @@ struct SettingsView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 12)
                 }
-                .scrollIndicators(.hidden)
+                .unifiedScrollVisual(isDarkMode: isDarkMode)
             }
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             .overlay {

@@ -247,6 +247,10 @@ struct PortsView: View {
         isCompactScreen ? 192 : 232
     }
 
+    private var commandProfilesViewportHeight: CGFloat {
+        isCompactScreen ? 136 : 152
+    }
+
     private var metricsPairHeight: CGFloat {
         isCompactScreen ? 104 : 110
     }
@@ -311,7 +315,6 @@ struct PortsView: View {
         }
 
         var commandToPID: [String: Int] = [:]
-        var portToPID: [Int: Int] = [:]
 
         for item in externalListeners.sorted(by: { lhs, rhs in
             if lhs.port == rhs.port {
@@ -325,9 +328,6 @@ struct PortsView: View {
                     commandToPID[normalized] = item.pid
                 }
             }
-            if portToPID[item.port] == nil {
-                portToPID[item.port] = item.pid
-            }
         }
 
         var result: [String: Int] = [:]
@@ -337,20 +337,48 @@ struct PortsView: View {
             let normalizedCommand = normalizeCommandForMatch(profile.command)
             if let pid = commandToPID[normalizedCommand] {
                 result[profile.id] = pid
-                continue
-            }
-
-            guard let inferredPort = commands.inferredPort(for: profile) else { continue }
-            if let pid = portToPID[inferredPort] {
-                result[profile.id] = pid
             }
         }
 
         return result
     }
 
+    private var detectedPortOccupiedPIDByProfileID: [String: Int] {
+        let managedProfileIDs = Set(commands.runningByProfileID.keys)
+        let managedPIDs = Set(commands.runningByProfileID.values.map { Int($0.pid) })
+        let externallyRunningProfileIDs = Set(detectedExternalRunningPIDByProfileID.keys)
+
+        let externalListeners = store.listeners.filter { listener in
+            !managedPIDs.contains(listener.pid)
+        }
+
+        var portToPID: [Int: Int] = [:]
+        for item in externalListeners.sorted(by: { lhs, rhs in
+            if lhs.port == rhs.port {
+                return lhs.pid < rhs.pid
+            }
+            return lhs.port < rhs.port
+        }) {
+            if portToPID[item.port] == nil {
+                portToPID[item.port] = item.pid
+            }
+        }
+
+        var result: [String: Int] = [:]
+        for profile in commands.profiles {
+            guard !managedProfileIDs.contains(profile.id) else { continue }
+            guard !externallyRunningProfileIDs.contains(profile.id) else { continue }
+            guard let inferredPort = commands.inferredPort(for: profile) else { continue }
+            guard let pid = portToPID[inferredPort] else { continue }
+            result[profile.id] = pid
+        }
+        return result
+    }
+
     private var scopedStartableCount: Int {
-        scopedProfiles.filter { !isProfileActive($0) }.count
+        scopedProfiles.filter {
+            !isProfileActive($0) && !isProfilePortOccupied($0)
+        }.count
     }
 
     private var conflictFixSuggestions: [ConflictFixSuggestion] {
@@ -1158,6 +1186,17 @@ struct PortsView: View {
             }
             .padding(.bottom, 6)
 
+            Text(
+                tr(
+                    "Workspace 用法：在 profiles.yaml 的 tags 里写 workspace:名称（例如 tags: [\"workspace:billing\"]），再在这里下拉切换。",
+                    "Workspace tip: add tags like workspace:name in profiles.yaml (e.g. tags: [\"workspace:billing\"]), then switch it from this menu."
+                )
+            )
+            .font(.system(size: 7.9, weight: .medium))
+            .foregroundStyle(.secondary)
+            .lineLimit(2)
+            .padding(.bottom, 6)
+
             if !conflictFixSuggestions.isEmpty {
                 conflictFixSection
                     .padding(.bottom, 6)
@@ -1190,7 +1229,7 @@ struct PortsView: View {
                 }
             } else {
                 Group {
-                    if scopedProfiles.count > 3 {
+                    if scopedProfiles.count > 2 {
                         ScrollView {
                             VStack(spacing: 0) {
                                 ForEach(Array(scopedProfiles.enumerated()), id: \.element.id) { index, profile in
@@ -1202,7 +1241,11 @@ struct PortsView: View {
                             }
                         }
                         .unifiedScrollVisual(isDarkMode: isDarkMode)
-                        .frame(maxHeight: commandProfilesListMaxHeight)
+                        .frame(
+                            minHeight: commandProfilesViewportHeight,
+                            maxHeight: min(commandProfilesViewportHeight, commandProfilesListMaxHeight),
+                            alignment: .top
+                        )
                     } else {
                         VStack(spacing: 0) {
                             ForEach(Array(scopedProfiles.enumerated()), id: \.element.id) { index, profile in
@@ -1229,7 +1272,9 @@ struct PortsView: View {
     private func commandProfileRow(_ profile: CommandProfile) -> some View {
         let runningInfo = commands.runningByProfileID[profile.id]
         let externalRunningPID = detectedExternalRunningPIDByProfileID[profile.id]
+        let occupiedPortPID = detectedPortOccupiedPIDByProfileID[profile.id]
         let isExternallyRunning = runningInfo == nil && externalRunningPID != nil
+        let isPortOccupied = runningInfo == nil && externalRunningPID == nil && occupiedPortPID != nil
 
         return HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 1.5) {
@@ -1238,6 +1283,15 @@ struct PortsView: View {
                         .font(.system(size: 9.9, weight: .semibold))
                         .foregroundStyle(Color.black.opacity(0.78))
                         .lineLimit(1)
+
+                    if isMockProfile(profile) {
+                        Text(tr("模拟 MOCK", "MOCK"))
+                            .font(.system(size: 7.2, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.purple.opacity(0.86))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Color.purple.opacity(0.12), in: Capsule())
+                    }
 
                     if let workspace = commands.workspaceName(for: profile) {
                         Text(workspace)
@@ -1282,6 +1336,10 @@ struct PortsView: View {
                     Text("\(tr("运行中（外部）", "Running (External)")) · PID \(plainNumber(externalRunningPID))")
                         .font(.system(size: 8.1, weight: .semibold))
                         .foregroundStyle(Color.green.opacity(0.82))
+                } else if let occupiedPortPID {
+                    Text("\(tr("端口被占用（非本命令）", "Port occupied (other process)")) · PID \(plainNumber(occupiedPortPID))")
+                        .font(.system(size: 8.1, weight: .semibold))
+                        .foregroundStyle(Color.orange.opacity(0.86))
                 }
             }
 
@@ -1324,6 +1382,17 @@ struct PortsView: View {
                 .buttonStyle(.plain)
                 .font(.system(size: 8.7, weight: .semibold))
                 .foregroundStyle(Color.orange.opacity(0.85))
+            } else if isPortOccupied {
+                Text(tr("端口占用", "Port Occupied"))
+                    .font(.system(size: 8.2, weight: .semibold))
+                    .foregroundStyle(Color.orange.opacity(0.86))
+
+                Button(tr("改端口", "Change Port")) {
+                    requestPortEdit(for: profile)
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 8.7, weight: .semibold))
+                .foregroundStyle(Color.orange.opacity(0.85))
             } else {
                 Button(tr("启动", "Start")) {
                     commands.start(profile: profile)
@@ -1354,13 +1423,24 @@ struct PortsView: View {
             .lowercased()
     }
 
+    private func isMockProfile(_ profile: CommandProfile) -> Bool {
+        if profile.name.lowercased() == "admin-api" {
+            return true
+        }
+        return profile.tags.contains { $0.lowercased() == "mock" }
+    }
+
     private func isProfileActive(_ profile: CommandProfile) -> Bool {
         commands.runningByProfileID[profile.id] != nil || detectedExternalRunningPIDByProfileID[profile.id] != nil
     }
 
+    private func isProfilePortOccupied(_ profile: CommandProfile) -> Bool {
+        detectedPortOccupiedPIDByProfileID[profile.id] != nil
+    }
+
     private func startInactiveProfilesInSelectedWorkspace() {
         let targets = scopedProfiles.filter { profile in
-            !isProfileActive(profile)
+            !isProfileActive(profile) && !isProfilePortOccupied(profile)
         }
         for profile in targets {
             commands.start(profile: profile)
@@ -3917,29 +3997,66 @@ private struct PortGauge: View {
     }
 }
 
-private struct UnifiedScrollVisualModifier: ViewModifier {
+private struct ScrollIndicatorMetrics: Equatable {
+    var isScrollable: Bool = false
+    var visibleRatio: CGFloat = 1
+    var offsetRatio: CGFloat = 0
+}
+
+struct UnifiedScrollVisualModifier: ViewModifier {
     let isDarkMode: Bool
+
+    @State private var metrics = ScrollIndicatorMetrics()
+    @State private var isScrolling = false
 
     func body(content: Content) -> some View {
         content
             .scrollIndicators(.hidden)
+            .background(
+                OverlayAutoHideScrollerConfigurator(
+                    metrics: $metrics,
+                    isScrolling: $isScrolling
+                )
+            )
             .overlay(alignment: .trailing) {
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(isDarkMode ? 0.08 : 0.16),
-                                Color.white.opacity(isDarkMode ? 0.22 : 0.42),
-                                Color.white.opacity(isDarkMode ? 0.08 : 0.16)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(width: 2.6)
-                    .padding(.trailing, 1.5)
-                    .padding(.vertical, 8)
-                    .allowsHitTesting(false)
+                GeometryReader { geometry in
+                    if metrics.isScrollable && isScrolling {
+                        let trackHeight = max(0, geometry.size.height - 16)
+                        let knobHeight = max(26, trackHeight * max(0.08, min(metrics.visibleRatio, 1)))
+                        let travel = max(trackHeight - knobHeight, 0)
+                        let knobOffset = 8 + travel * min(max(metrics.offsetRatio, 0), 1)
+
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: isDarkMode
+                                        ? [
+                                            Color.white.opacity(0.34),
+                                            Color.white.opacity(0.54)
+                                        ]
+                                        : [
+                                            Color.black.opacity(0.18),
+                                            Color.black.opacity(0.28)
+                                        ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: 3.2, height: knobHeight)
+                            .offset(y: knobOffset)
+                            .padding(.trailing, 2)
+                            .shadow(
+                                color: isDarkMode
+                                    ? Color.black.opacity(0.22)
+                                    : Color.black.opacity(0.12),
+                                radius: 3,
+                                y: 1
+                            )
+                            .transition(.opacity)
+                            .animation(.easeOut(duration: 0.16), value: isScrolling)
+                    }
+                }
+                .allowsHitTesting(false)
             }
             .overlay(alignment: .top) {
                 LinearGradient(
@@ -3968,7 +4085,161 @@ private struct UnifiedScrollVisualModifier: ViewModifier {
     }
 }
 
-private extension View {
+private struct OverlayAutoHideScrollerConfigurator: NSViewRepresentable {
+    @Binding var metrics: ScrollIndicatorMetrics
+    @Binding var isScrolling: Bool
+
+    final class Coordinator {
+        var boundsObserver: NSObjectProtocol?
+        var frameObserver: NSObjectProtocol?
+        var willStartLiveScrollObserver: NSObjectProtocol?
+        var didEndLiveScrollObserver: NSObjectProtocol?
+        var hideWorkItem: DispatchWorkItem?
+        weak var observedScrollView: NSScrollView?
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        DispatchQueue.main.async {
+            configure(from: view, coordinator: context.coordinator)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            configure(from: nsView, coordinator: context.coordinator)
+            refreshMetrics(for: context.coordinator.observedScrollView)
+        }
+    }
+
+    private func configure(from view: NSView, coordinator: Coordinator) {
+        guard let scrollView = enclosingScrollView(from: view) else { return }
+        guard coordinator.observedScrollView !== scrollView else { return }
+
+        if let boundsObserver = coordinator.boundsObserver {
+            NotificationCenter.default.removeObserver(boundsObserver)
+            coordinator.boundsObserver = nil
+        }
+        if let frameObserver = coordinator.frameObserver {
+            NotificationCenter.default.removeObserver(frameObserver)
+            coordinator.frameObserver = nil
+        }
+        if let willStartLiveScrollObserver = coordinator.willStartLiveScrollObserver {
+            NotificationCenter.default.removeObserver(willStartLiveScrollObserver)
+            coordinator.willStartLiveScrollObserver = nil
+        }
+        if let didEndLiveScrollObserver = coordinator.didEndLiveScrollObserver {
+            NotificationCenter.default.removeObserver(didEndLiveScrollObserver)
+            coordinator.didEndLiveScrollObserver = nil
+        }
+
+        coordinator.observedScrollView = scrollView
+        scrollView.scrollerStyle = .overlay
+        scrollView.autohidesScrollers = true
+        scrollView.drawsBackground = false
+        scrollView.hasVerticalScroller = false
+        scrollView.contentView.postsBoundsChangedNotifications = true
+        scrollView.contentView.postsFrameChangedNotifications = true
+
+        coordinator.boundsObserver = NotificationCenter.default.addObserver(
+            forName: NSView.boundsDidChangeNotification,
+            object: scrollView.contentView,
+            queue: .main
+        ) { [weak coordinator] _ in
+            guard let coordinator else { return }
+            refreshMetrics(for: coordinator.observedScrollView)
+        }
+
+        coordinator.frameObserver = NotificationCenter.default.addObserver(
+            forName: NSView.frameDidChangeNotification,
+            object: scrollView.contentView,
+            queue: .main
+        ) { [weak coordinator] _ in
+            guard let coordinator else { return }
+            refreshMetrics(for: coordinator.observedScrollView)
+        }
+
+        coordinator.willStartLiveScrollObserver = NotificationCenter.default.addObserver(
+            forName: NSScrollView.willStartLiveScrollNotification,
+            object: scrollView,
+            queue: .main
+        ) { [weak coordinator] _ in
+            guard let coordinator else { return }
+            indicateScrollingStarted(with: coordinator)
+        }
+
+        coordinator.didEndLiveScrollObserver = NotificationCenter.default.addObserver(
+            forName: NSScrollView.didEndLiveScrollNotification,
+            object: scrollView,
+            queue: .main
+        ) { [weak coordinator] _ in
+            guard let coordinator else { return }
+            indicateScrollingEnded(with: coordinator)
+        }
+
+        refreshMetrics(for: scrollView)
+    }
+
+    private func indicateScrollingStarted(with coordinator: Coordinator) {
+        coordinator.hideWorkItem?.cancel()
+        isScrolling = true
+    }
+
+    private func indicateScrollingEnded(with coordinator: Coordinator) {
+        coordinator.hideWorkItem?.cancel()
+
+        let work = DispatchWorkItem {
+            isScrolling = false
+        }
+        coordinator.hideWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22, execute: work)
+    }
+
+    private func refreshMetrics(for scrollView: NSScrollView?) {
+        guard let scrollView else {
+            metrics = ScrollIndicatorMetrics()
+            return
+        }
+
+        let visibleHeight = max(scrollView.contentView.bounds.height, 1)
+        let documentHeight = scrollView.documentView?.bounds.height ?? 0
+        let scrollable = documentHeight > visibleHeight + 0.5
+
+        guard scrollable else {
+            metrics = ScrollIndicatorMetrics(isScrollable: false, visibleRatio: 1, offsetRatio: 0)
+            return
+        }
+
+        let maxOffset = max(documentHeight - visibleHeight, 1)
+        let currentOffset = min(max(scrollView.contentView.bounds.origin.y, 0), maxOffset)
+        let visibleRatio = min(max(visibleHeight / documentHeight, 0.08), 1)
+        let offsetRatio = min(max(currentOffset / maxOffset, 0), 1)
+
+        metrics = ScrollIndicatorMetrics(
+            isScrollable: true,
+            visibleRatio: visibleRatio,
+            offsetRatio: offsetRatio
+        )
+    }
+
+    private func enclosingScrollView(from view: NSView) -> NSScrollView? {
+        var current: NSView? = view
+        while let node = current {
+            if let scrollView = node as? NSScrollView {
+                return scrollView
+            }
+            current = node.superview
+        }
+        return nil
+    }
+}
+
+extension View {
     func unifiedScrollVisual(isDarkMode: Bool) -> some View {
         modifier(UnifiedScrollVisualModifier(isDarkMode: isDarkMode))
     }
