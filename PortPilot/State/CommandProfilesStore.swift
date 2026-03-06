@@ -153,14 +153,14 @@ final class CommandProfilesStore: ObservableObject {
     func reloadProfiles() {
         do {
             let loadedProfiles = try yamlStore.loadProfiles()
-            let normalizedProfiles = normalizedProfilesEnsuringSingleMock(loadedProfiles)
+            let normalizedProfiles = normalizedProfilesKeepingAtMostOneMock(loadedProfiles)
             profiles = normalizedProfiles
 
             if normalizedProfiles != loadedProfiles {
                 do {
                     try yamlStore.saveProfiles(normalizedProfiles)
                 } catch {
-                    appendEvent(level: .warning, message: "已补充默认 MOCK 命令，但写回 profiles.yaml 失败：\(error.localizedDescription)")
+                    appendEvent(level: .warning, message: "已规范化启动命令配置，但写回 profiles.yaml 失败：\(error.localizedDescription)")
                 }
             }
 
@@ -909,7 +909,7 @@ final class CommandProfilesStore: ObservableObject {
         return fallbackPort > 0 ? "service-\(fallbackPort)" : "service"
     }
 
-    private func normalizedProfilesEnsuringSingleMock(_ input: [CommandProfile]) -> [CommandProfile] {
+    private func normalizedProfilesKeepingAtMostOneMock(_ input: [CommandProfile]) -> [CommandProfile] {
         var selectedMock: CommandProfile?
         var userProfiles: [CommandProfile] = []
 
@@ -923,8 +923,10 @@ final class CommandProfilesStore: ObservableObject {
             }
         }
 
-        let mockProfile = selectedMock ?? defaultMockCommandProfile()
-        return ([mockProfile] + userProfiles).sorted(by: sortProfiles)
+        if let selectedMock {
+            return ([selectedMock] + userProfiles).sorted(by: sortProfiles)
+        }
+        return userProfiles.sorted(by: sortProfiles)
     }
 
     private func isMockProfileDefinition(_ profile: CommandProfile) -> Bool {
@@ -948,17 +950,6 @@ final class CommandProfilesStore: ObservableObject {
             ports: profile.ports,
             tags: profile.tags + ["mock"],
             env: profile.env
-        )
-    }
-
-    private func defaultMockCommandProfile() -> CommandProfile {
-        CommandProfile(
-            name: "admin-api",
-            note: "MOCK",
-            cwd: "~/work/admin-api",
-            command: "pnpm dev",
-            ports: [3001],
-            tags: ["workspace:admin", "mock"]
         )
     }
 
