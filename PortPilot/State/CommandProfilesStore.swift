@@ -955,7 +955,7 @@ final class CommandProfilesStore: ObservableObject {
         CommandProfile(
             name: "admin-api",
             note: "MOCK",
-            cwd: "/Users/yourname/work/admin-api",
+            cwd: "~/work/admin-api",
             command: "pnpm dev",
             ports: [3001],
             tags: ["workspace:admin", "mock"]
@@ -1219,7 +1219,7 @@ struct CommandProfilesYAMLStore {
         """
         profiles:
           - name: "admin-api"
-            cwd: "/Users/yourname/work/admin-api"
+            cwd: "~/work/admin-api"
             command: "pnpm dev"
             ports: [3001]
             tags: ["workspace:admin", "mock"]

@@ -59,6 +59,21 @@ PortPilot is a macOS 15+ menu bar port monitor built with **SwiftUI + MenuBarExt
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
 
+### 分发打包（无需用户安装 Xcode）
+- 普通打包（本地签名）：`./scripts/package_release.sh`
+- 产物：`dist/PortPilot-<version>.dmg` 和 `dist/PortPilot-<version>.zip`
+
+### Developer ID 签名 + Notarization（推荐公开分发）
+1. 配置 notary 凭据（一次即可）：
+   - `./scripts/setup_notary_profile.sh PortPilotNotary`
+2. 执行签名 + 公证 + 装订：
+   - `DEV_ID_APP_CERT='Developer ID Application: Your Name (TEAMID)' NOTARY_PROFILE='PortPilotNotary' ./scripts/package_notarized_release.sh`
+3. 产物与日志：
+   - `dist/PortPilot-<version>.dmg`
+   - `dist/PortPilot-<version>.zip`
+   - `dist/notary-app-<version>.json`
+   - `dist/notary-dmg-<version>.json`
+
 ### 设置项（内置面板）
 - 语言：中文 / English
 - 刷新频率：1 / 2 / 5 / 10 秒
@@ -70,6 +85,14 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 - Enable Kill（默认 OFF）
 - 忽略端口 / 忽略进程 / 进程别名
 - 通知：新端口 / 端口冲突 / 扫描异常
+
+### 发布前检查清单（Release Checklist）
+- 构建检查：`./scripts/package_release.sh`
+- 签名公证（可选）：`./scripts/setup_notary_profile.sh` + `./scripts/package_notarized_release.sh`
+- 敏感信息检查：确认仓库不包含 `.env`、私钥、Token、个人证书文件
+- 产物检查：`dist/PortPilot-<version>.dmg` 和 `dist/PortPilot-<version>.zip`
+- Gatekeeper（有证书时）：`spctl -a -vv --type execute PortPilot.app`
+- 文档检查：截图、功能列表、版本说明与实际一致
 
 ---
 
@@ -119,6 +142,21 @@ If your machine still points to Command Line Tools:
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
 
+### Distribution build (users don't need Xcode)
+- Standard package (local signing): `./scripts/package_release.sh`
+- Output: `dist/PortPilot-<version>.dmg` and `dist/PortPilot-<version>.zip`
+
+### Developer ID signing + notarization (recommended)
+1. Store notary credentials (one-time):
+   - `./scripts/setup_notary_profile.sh PortPilotNotary`
+2. Run signed + notarized release:
+   - `DEV_ID_APP_CERT='Developer ID Application: Your Name (TEAMID)' NOTARY_PROFILE='PortPilotNotary' ./scripts/package_notarized_release.sh`
+3. Outputs and logs:
+   - `dist/PortPilot-<version>.dmg`
+   - `dist/PortPilot-<version>.zip`
+   - `dist/notary-app-<version>.json`
+   - `dist/notary-dmg-<version>.json`
+
 ### Settings (integrated panel)
 - Language: Chinese / English
 - Refresh interval: 1 / 2 / 5 / 10 seconds
@@ -130,6 +168,14 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 - Enable Kill (default OFF)
 - Ignore ports / ignore processes / process aliases
 - Notifications: new ports / port conflicts / scanner failures
+
+### Release checklist
+- Build check: `./scripts/package_release.sh`
+- Signed + notarized build (optional): `./scripts/setup_notary_profile.sh` + `./scripts/package_notarized_release.sh`
+- Secrets check: ensure no `.env`, private keys, tokens, or personal certificates are tracked
+- Artifact check: `dist/PortPilot-<version>.dmg` and `dist/PortPilot-<version>.zip`
+- Gatekeeper verification (with cert): `spctl -a -vv --type execute PortPilot.app`
+- Docs check: screenshots, feature list, and release notes match actual behavior
 
 ---
 
