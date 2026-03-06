@@ -455,7 +455,8 @@ struct PortsView: View {
     }
 
     private var shouldUseScrollablePanelContainer: Bool {
-        isSettingsExpanded && isCompactScreen
+        guard isSettingsExpanded else { return false }
+        return isCompactScreen || expandedSettingsCards.count > 1
     }
 
     private var panelContainerHeight: CGFloat {
