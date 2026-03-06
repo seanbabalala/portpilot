@@ -8,16 +8,28 @@ enum ProcessActionsError: LocalizedError {
     case killFailed(pid: Int, errorCode: Int32)
 
     var errorDescription: String? {
+        localizedDescription(language: .english)
+    }
+
+    func localizedDescription(language: AppLanguage) -> String {
         switch self {
         case .invalidPID(let pid):
-            return "Invalid PID: \(pid)."
+            return language == .english
+                ? "Invalid PID: \(pid)."
+                : "无效 PID：\(pid)。"
         case .permissionDenied(let pid):
-            return "Permission denied when terminating PID \(pid)."
+            return language == .english
+                ? "Permission denied when terminating PID \(pid)."
+                : "结束 PID \(pid) 时权限不足。"
         case .timedOut(let pid, let timeout):
-            return "PID \(pid) did not exit within \(String(format: "%.1f", timeout))s."
+            return language == .english
+                ? "PID \(pid) did not exit within \(String(format: "%.1f", timeout))s."
+                : "PID \(pid) 在 \(String(format: "%.1f", timeout)) 秒内未退出。"
         case .killFailed(let pid, let errorCode):
             let message = String(cString: strerror(errorCode))
-            return "Failed to terminate PID \(pid): \(message) (errno \(errorCode))."
+            return language == .english
+                ? "Failed to terminate PID \(pid): \(message) (errno \(errorCode))."
+                : "结束 PID \(pid) 失败：\(message)（errno \(errorCode)）。"
         }
     }
 }

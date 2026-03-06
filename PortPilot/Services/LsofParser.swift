@@ -35,7 +35,12 @@ struct LsofParser {
             port: port,
             user: user,
             protocolName: protocolName,
-            commandLine: nil
+            commandLine: nil,
+            ppid: nil,
+            parentProcessName: nil,
+            launchSource: nil,
+            cpuUsagePercent: nil,
+            memoryFootprintMB: nil
         )
     }
 

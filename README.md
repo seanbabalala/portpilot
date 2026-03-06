@@ -1,95 +1,130 @@
 # PortPilot
 
-A lightweight macOS menu bar app that monitors local TCP listening ports in real time.
+**Pilot your ports**
 
-PortPilot is built with **SwiftUI + MenuBarExtra** for macOS 15+, with zero third-party runtime dependencies.
+PortPilot 是一个面向 macOS 15+ 的菜单栏端口监控工具，使用 **SwiftUI + MenuBarExtra** 实现，无第三方运行时依赖。  
+PortPilot is a macOS 15+ menu bar port monitor built with **SwiftUI + MenuBarExtra**, with zero third-party runtime dependencies.
 
----
+## Screenshot / 截图
 
-## Features
+> UI preview renders (文档预览图)
 
-- Menu bar summary: `: N`
-- Real-time scan (default every 2s) using:
-  - `lsof -nP -iTCP -sTCP:LISTEN`
-- Unified light **Bento Grid** window with integrated controls and settings
-- Smooth trend chart (spline curve) for global occupied ports
-- Port list with process info:
-  - Port / Process / PID / User / usage hint
-- Friendly interpretation:
-  - e.g. SSH tunnel, local dev service, database hints
-- Search by:
-  - port / process / PID / friendly label / usage hint
-- Sort and focus:
-  - sort by port / process / recent activity
-- "New" badge for newly discovered listeners (5 seconds)
-- Context menu actions:
-  - Copy URL / Copy PID / Copy kill command
-- Optional command-line detail display (for disambiguating multiple `ssh` processes)
-- Optional kill action with safety controls:
-  - disabled by default
-  - explicit inline settings enable
-  - confirmation required before each kill
-  - async termination pipeline (`SIGTERM` → fallback `SIGKILL`) with immediate UI refresh
+![Main Panel Preview](docs/images/main-panel-cn-en.png)
 
----
+![Settings Bilingual Preview](docs/images/settings-bilingual.png)
 
-## Security Defaults
+![Language Toggle Demo](docs/images/language-toggle.png)
 
-- **Show command line**: OFF by default
-- **Enable Kill**: OFF by default
-- Kill is destructive and guarded by:
-  1. explicit opt-in in Settings
-  2. per-action confirmation dialog
+## 中文
 
----
+### 功能亮点
+- 菜单栏摘要：`: N`（支持失败阈值后 `: —`）
+- 实时扫描：`lsof -nP -iTCP -sTCP:LISTEN`
+- 端口列表：Port / Process / PID / User / 友好用途说明
+- 进程增强信息：PPID / 父进程 / 启动来源（launchd、brew、docker、ssh）
+- 搜索与排序：按端口/进程/最近活动
+- 新条目高亮（5 秒）
+- 资源徽标：每进程 CPU / 内存
+- 右键操作：复制 URL、PID、kill 命令
+- 启动命令管理：YAML 配置、一键启动/停止/重启、改端口、冲突修复建议
+- Workspace 场景：通过 `tags: ["workspace:xxx"]` 分组命令并按场景一键启停
+- 开机启动：可在设置中开启登录后自动启动
+- 诊断增强：导出监听、命令配置、运行事件、系统环境诊断包（JSON）
+- 全局语言切换：中文 / English
 
-## Requirements
+### 安全默认
+- `Show command line` 默认关闭
+- `Enable Kill` 默认关闭
+- Kill 需显式开启，并且每次操作前二次确认
 
+### 运行要求
 - macOS 15+
 - Xcode 16+
 
----
+### 本地运行
+1. 打开 `PortPilot.xcodeproj`
+2. 选择 Scheme：`PortPilot`
+3. 运行：`⌘R`
 
-## Run in Xcode
-
-1. Open:
-   - `PortPilot.xcodeproj`
-2. Select scheme:
-   - `PortPilot`
-3. Run:
-   - `⌘R`
-
-If your machine is still bound to Command Line Tools, switch to full Xcode first:
+若当前仍指向 Command Line Tools：
 
 ```bash
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
 
----
-
-## Settings
-
-- Integrated in the main panel (no separate settings scene)
-- Refresh interval: `1 / 2 / 5 / 10` seconds
-- Count mode:
-  - **Mode A**: `(protocol, port, pid)`
-  - **Mode B**: `(protocol, port)`
-- Show command line: OFF by default
-- Enable Kill: OFF by default
-
----
-
-## How PortPilot Works
-
-1. `LsofRunner` runs `lsof` in background.
-2. `LsofParser` loosely parses output and extracts listening port data.
-3. `PortsScanner` periodically refreshes and updates scanner state.
-4. `PortsStore` handles dedupe, sorting, and “new item” lifecycle.
-5. SwiftUI menu UI renders results with a modern, border-light Bento layout.
+### 设置项（内置面板）
+- 语言：中文 / English
+- 刷新频率：1 / 2 / 5 / 10 秒
+- 计数模式：按实例（port+pid）/ 按端口（port only）
+- 显示命令行（默认 OFF）
+- 显示资源徽标（默认 ON）
+- 自动建议启动项（默认 ON）
+- 开机启动（默认 OFF）
+- Enable Kill（默认 OFF）
+- 忽略端口 / 忽略进程 / 进程别名
+- 通知：新端口 / 端口冲突 / 扫描异常
 
 ---
 
-## Project Structure
+## English
+
+### Highlights
+- Menu bar summary: `: N` (falls back to `: —` after failure threshold)
+- Real-time scan via `lsof -nP -iTCP -sTCP:LISTEN`
+- Port list: Port / Process / PID / User / friendly usage hints
+- Process enrichment: PPID / parent process / launch source (launchd, brew, docker, ssh)
+- Search + sort: by port / process / recent activity
+- “New” badge for 5 seconds
+- Resource badges: per-process CPU / memory
+- Context menu: copy URL, PID, kill command
+- Startup command management: YAML-driven profiles, one-click start/stop/restart, port rebinding, conflict-fix suggestions
+- Workspace scenes: group commands via `tags: ["workspace:xxx"]` and control by workspace
+- Launch at login: optional setting to start automatically after login
+- Enhanced diagnostics: export listeners, command config, runtime events, and system environment (JSON)
+- Global language switch: Chinese / English
+
+### Secure by default
+- `Show command line` is OFF by default
+- `Enable Kill` is OFF by default
+- Kill is opt-in and always requires confirmation
+
+### Requirements
+- macOS 15+
+- Xcode 16+
+
+### Run locally
+1. Open `PortPilot.xcodeproj`
+2. Select scheme `PortPilot`
+3. Run with `⌘R`
+
+If your machine still points to Command Line Tools:
+
+```bash
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+```
+
+### Settings (integrated panel)
+- Language: Chinese / English
+- Refresh interval: 1 / 2 / 5 / 10 seconds
+- Count mode: by instance (port+pid) / by port (port only)
+- Show command line (default OFF)
+- Show resource badges (default ON)
+- Auto suggest startup profiles (default ON)
+- Launch at login (default OFF)
+- Enable Kill (default OFF)
+- Ignore ports / ignore processes / process aliases
+- Notifications: new ports / port conflicts / scanner failures
+
+---
+
+## How it works
+1. `LsofRunner` executes `lsof` in background.
+2. `LsofParser` loosely parses output and extracts listeners.
+3. `PortsScanner` handles periodic scanning and failure state.
+4. `PortsStore` manages dedupe, sort, and new-item lifecycle.
+5. `PortsView` renders the integrated menu panel UI.
+
+## Project structure
 
 ```text
 PortPilot/
@@ -102,27 +137,18 @@ PortPilot/
     PortsScanner.swift
     ProcessActions.swift
   State/
+    CommandProfilesStore.swift
     PortsStore.swift
     SettingsStore.swift
   UI/
     PortsView.swift
-    SettingsView.swift (legacy / currently not mounted)
+    SettingsView.swift
   Resources/
     Info.plist
 ```
 
----
-
-## Notes
-
-- Data source is intentionally constrained to `lsof`.
-- Parsing is defensive: malformed lines are skipped (no crash).
-- Menu summary fallback:
-  - after 3 consecutive scan failures, summary shows `: —`
-  - recovers automatically on next successful scan
-
----
-
 ## License
+MIT. See `LICENSE`.
 
-MIT (recommended). Add a `LICENSE` file before public release.
+## Contributing
+See `CONTRIBUTING.md`.

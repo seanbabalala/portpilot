@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 @MainActor
@@ -5,6 +6,7 @@ final class PortsStore: ObservableObject {
     struct ListenerItem: Identifiable, Hashable {
         let id: String
         let listener: PortListener
+        let displayName: String
         let firstSeenAt: Date
         let lastSeenAt: Date
         let isNew: Bool
@@ -15,6 +17,11 @@ final class PortsStore: ObservableObject {
         var user: String? { listener.user }
         var protocolName: String { listener.protocolName }
         var commandLine: String? { listener.commandLine }
+        var ppid: Int? { listener.ppid }
+        var parentProcessName: String? { listener.parentProcessName }
+        var launchSource: String? { listener.launchSource }
+        var cpuUsagePercent: Double? { listener.cpuUsagePercent }
+        var memoryFootprintMB: Int? { listener.memoryFootprintMB }
     }
 
     @Published private(set) var listeners: [ListenerItem] = []
@@ -23,6 +30,10 @@ final class PortsStore: ObservableObject {
     private var countMode: PortCountMode
     private var stateByKey: [ListenerInstanceKey: ListenerState] = [:]
     private var expirationTasks: [ListenerInstanceKey: Task<Void, Never>] = [:]
+    private var cancellables: Set<AnyCancellable> = []
+    private var ignoredPorts: Set<Int> = []
+    private var ignoredProcesses: Set<String> = []
+    private var processAliases: [String: String] = [:]
 
     init(
         newBadgeDuration: TimeInterval = 5,
@@ -34,6 +45,33 @@ final class PortsStore: ObservableObject {
 
         if let settingsStore {
             self.countMode = settingsStore.countMode
+            updateRules(
+                ignoredPorts: settingsStore.ignoredPorts,
+                ignoredProcesses: settingsStore.ignoredProcessNames,
+                processAliases: settingsStore.processAliases
+            )
+
+            settingsStore.$countMode
+                .removeDuplicates()
+                .sink { [weak self] nextMode in
+                    self?.updateCountMode(nextMode)
+                }
+                .store(in: &cancellables)
+
+            Publishers.CombineLatest3(
+                settingsStore.$ignoredPortsText.removeDuplicates(),
+                settingsStore.$ignoredProcessesText.removeDuplicates(),
+                settingsStore.$processAliasesText.removeDuplicates()
+            )
+            .sink { [weak self, weak settingsStore] _, _, _ in
+                guard let self, let settingsStore else { return }
+                self.updateRules(
+                    ignoredPorts: settingsStore.ignoredPorts,
+                    ignoredProcesses: settingsStore.ignoredProcessNames,
+                    processAliases: settingsStore.processAliases
+                )
+            }
+            .store(in: &cancellables)
         }
     }
 
@@ -158,6 +196,7 @@ final class PortsStore: ObservableObject {
                 ListenerItem(
                     id: itemID(for: state.listener),
                     listener: state.listener,
+                    displayName: displayName(for: state.listener),
                     firstSeenAt: state.firstSeenAt,
                     lastSeenAt: state.lastSeenAt,
                     isNew: state.isNew
@@ -166,7 +205,7 @@ final class PortsStore: ObservableObject {
     }
 
     private func projectedStatesForCurrentMode() -> [ListenerState] {
-        let allStates = Array(stateByKey.values)
+        let allStates = applyRules(to: Array(stateByKey.values))
 
         switch countMode {
         case .portAndPID:
@@ -193,6 +232,41 @@ final class PortsStore: ObservableObject {
                 )
             }
         }
+    }
+
+    private func updateRules(
+        ignoredPorts: Set<Int>,
+        ignoredProcesses: Set<String>,
+        processAliases: [String: String]
+    ) {
+        self.ignoredPorts = ignoredPorts
+        self.ignoredProcesses = ignoredProcesses
+        self.processAliases = processAliases
+        publishSortedListeners()
+    }
+
+    private func applyRules(to states: [ListenerState]) -> [ListenerState] {
+        states.compactMap { state in
+            guard !isIgnored(state.listener) else { return nil }
+            return state
+        }
+    }
+
+    private func isIgnored(_ listener: PortListener) -> Bool {
+        if ignoredPorts.contains(listener.port) {
+            return true
+        }
+
+        let processKey = listener.processName.lowercased()
+        return ignoredProcesses.contains(processKey)
+    }
+
+    private func aliasForProcess(_ processName: String) -> String? {
+        processAliases[processName.lowercased()]
+    }
+
+    private func displayName(for listener: PortListener) -> String {
+        aliasForProcess(listener.processName) ?? listener.processName
     }
 
     private func itemID(for listener: PortListener) -> String {

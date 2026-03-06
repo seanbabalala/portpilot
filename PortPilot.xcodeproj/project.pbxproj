@@ -12,9 +12,11 @@
 		1092A4B11AB1A22216EB8255 /* ProcessActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BA428C0C8C2389897110AE /* ProcessActions.swift */; };
 		10D96EE61150BDB66AE0029F /* PortPilotApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D517AEBB047FBA5AF22F881 /* PortPilotApp.swift */; };
 		1D0F306F1C2AA2D3CEC8223F /* PortsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25464E66BA4731561846A565 /* PortsStore.swift */; };
+		2B173B06A54940F5A4E5F326 /* PortKnowledgeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8718B96E196D4BE2A2356D6A /* PortKnowledgeStore.swift */; };
 		4EF2AAE3A2EB479609B49E3E /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 402C733CB3AD4483D7D57ECC /* SettingsStore.swift */; };
 		7AC2D368497D96F4C68C5D08 /* PortsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F29074F8E532AF1FCEFF70 /* PortsView.swift */; };
 		94841FDC2FE644BC9060F2F9 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C32FE42E374785083099C75 /* SettingsView.swift */; };
+		AE873433E2B3C9A9264EAE77 /* CommandProfilesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D93277417FCE77509392DA4A /* CommandProfilesStore.swift */; };
 		D888166B2D2C2323E3F7F16F /* PortListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95CC8B6A1F0403A26B3564E3 /* PortListener.swift */; };
 		E82B9AA659B17E17BBE54818 /* PortsScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AF32E777D8A80042A0220CD /* PortsScanner.swift */; };
 /* End PBXBuildFile section */
@@ -28,8 +30,10 @@
 		4538E828BD932E87FB855FE4 /* PortPilot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PortPilot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		489A496D6F39D0CD23E2BFF6 /* LsofParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LsofParser.swift; sourceTree = "<group>"; };
 		54F29074F8E532AF1FCEFF70 /* PortsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortsView.swift; sourceTree = "<group>"; };
+		8718B96E196D4BE2A2356D6A /* PortKnowledgeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortKnowledgeStore.swift; sourceTree = "<group>"; };
 		8AF32E777D8A80042A0220CD /* PortsScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortsScanner.swift; sourceTree = "<group>"; };
 		95CC8B6A1F0403A26B3564E3 /* PortListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortListener.swift; sourceTree = "<group>"; };
+		D93277417FCE77509392DA4A /* CommandProfilesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandProfilesStore.swift; sourceTree = "<group>"; };
 		E8502F86491259A9AFED32C9 /* LsofRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LsofRunner.swift; sourceTree = "<group>"; };
 		F8BA428C0C8C2389897110AE /* ProcessActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessActions.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -51,6 +55,8 @@
 		199B3081C990230762B36776 /* State */ = {
 			isa = PBXGroup;
 			children = (
+				D93277417FCE77509392DA4A /* CommandProfilesStore.swift */,
+				8718B96E196D4BE2A2356D6A /* PortKnowledgeStore.swift */,
 				25464E66BA4731561846A565 /* PortsStore.swift */,
 				402C733CB3AD4483D7D57ECC /* SettingsStore.swift */,
 			);
@@ -167,9 +173,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AE873433E2B3C9A9264EAE77 /* CommandProfilesStore.swift in Sources */,
 				02BB80AA5CE7988BC2DE0AA1 /* LsofParser.swift in Sources */,
 				00ADAF6905BA245A7DD89708 /* LsofRunner.swift in Sources */,
 				D888166B2D2C2323E3F7F16F /* PortListener.swift in Sources */,
+				2B173B06A54940F5A4E5F326 /* PortKnowledgeStore.swift in Sources */,
 				10D96EE61150BDB66AE0029F /* PortPilotApp.swift in Sources */,
 				E82B9AA659B17E17BBE54818 /* PortsScanner.swift in Sources */,
 				1D0F306F1C2AA2D3CEC8223F /* PortsStore.swift in Sources */,
