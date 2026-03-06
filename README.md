@@ -13,6 +13,11 @@ PortPilot is a macOS 15+ menu bar port monitor built with **SwiftUI + MenuBarExt
 
 ![Settings Panel](docs/images/setting.png)
 
+## Roadmap / 更新计划
+
+- User-facing weekly roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
+- We update progress weekly starting on **2026-03-09**.
+
 ## 中文
 
 ### 功能亮点
