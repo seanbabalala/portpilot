@@ -9,11 +9,9 @@ PortPilot is a macOS 15+ menu bar port monitor built with **SwiftUI + MenuBarExt
 
 > UI preview renders (文档预览图)
 
-![Main Panel Preview](docs/images/main-panel-cn-en.png)
+![Main Panel](docs/images/main.png)
 
-![Settings Bilingual Preview](docs/images/settings-bilingual.png)
-
-![Language Toggle Demo](docs/images/language-toggle.png)
+![Settings Panel](docs/images/setting.png)
 
 ## 中文
 
@@ -31,6 +29,13 @@ PortPilot is a macOS 15+ menu bar port monitor built with **SwiftUI + MenuBarExt
 - 开机启动：可在设置中开启登录后自动启动
 - 诊断增强：导出监听、命令配置、运行事件、系统环境诊断包（JSON）
 - 全局语言切换：中文 / English
+
+### 我们实现了什么 / 解决了什么
+- 为“同时开发多个后端项目”的日常场景，提供菜单栏内的一站式可视化管理
+- 不再依赖多个终端窗口记命令：启动、停止、重启、改端口都可在 GUI 完成
+- 把冷冰冰的端口信息转成可读语义：用途说明、别名、来源、父进程链
+- 降低端口冲突排障成本：冲突识别、可用端口建议、健康检查与诊断导出
+- 安全默认优先：命令行默认隐藏、Kill 默认关闭且二次确认
 
 ### 安全默认
 - `Show command line` 默认关闭
@@ -82,6 +87,13 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 - Launch at login: optional setting to start automatically after login
 - Enhanced diagnostics: export listeners, command config, runtime events, and system environment (JSON)
 - Global language switch: Chinese / English
+
+### What We Built / What It Solves
+- A menu-bar-first control center for developers running many local backend services at once
+- Removes terminal command memorization for daily ops (start/stop/restart/rebind port) in one GUI
+- Turns raw process/port data into readable context (purpose labels, aliases, source, parent chain)
+- Speeds up conflict troubleshooting with conflict detection, suggested free ports, health checks, and diagnostics export
+- Keeps security as default behavior (command line hidden by default, kill disabled by default, confirmation required)
 
 ### Secure by default
 - `Show command line` is OFF by default
